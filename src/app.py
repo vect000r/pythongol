@@ -1,6 +1,8 @@
 import pygame
 import sys
 from canvas import Canvas
+from menu import Menu
+
 
 class App:
     def __init__(self):
@@ -16,23 +18,53 @@ class App:
         self.BLACK = (0, 0, 0)
         self.WHITE = (255, 255, 255)
 
-        # Create canvas
+        # Create canvas and menu
         self.canvas = Canvas(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        self.menu = Menu(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
+        # Game state
+        self.game_state = 'menu'  # Can be 'menu' or 'game'
 
         pygame.display.set_caption("Game of Life")
 
     def run(self):
         running = True
         while running:
-            self.draw()
-            self.handle_events()
-            self.canvas.update_all_cells()  # Update cells each frame
+            if self.game_state == 'menu':
+                self.run_menu()
+            else:
+                self.run_game()
+
             self.clock.tick(60)
 
-    def draw(self):
-        self.canvas.draw()
+    def run_menu(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
-    def handle_events(self):
+            selected_option = self.menu.handle_event(event)
+            if selected_option:
+                if selected_option == 'play':
+                    self.game_state = 'game'
+                elif selected_option == 'exit':
+                    pygame.quit()
+                    sys.exit()
+
+        self.menu.draw(self.screen)
+        pygame.display.flip()
+
+    def run_game(self):
+        self.draw()
+        self.handle_game_events()
+        self.canvas.update_all_cells()
+
+    def draw(self):
+        self.screen.fill(self.BLACK)
+        self.canvas.draw()
+        pygame.display.flip()
+
+    def handle_game_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -50,12 +82,10 @@ class App:
 
     def handle_keyboard(self, key):
         if key == pygame.K_SPACE:
-            # Toggle pause/play
             self.canvas.paused = not self.canvas.paused
         elif key == pygame.K_r:
-            # Randomize grid
             self.canvas.randomize_grid()
         elif key == pygame.K_c:
-            # Clear grid
             self.canvas.clear_grid()
-
+        elif key == pygame.K_ESCAPE:
+            self.game_state = 'menu'
